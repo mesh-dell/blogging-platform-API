@@ -220,7 +220,7 @@ func (r *BlogRepository) UpdateBlog(id int, req model.BlogPostRequest) (model.Bl
 	if err := tx.Commit(); err != nil {
 		return model.BlogPost{}, err
 	}
-	return model.BlogPost{}, err
+	return r.GetBlogById(id)
 }
 
 func NewBlogRepository(db *sql.DB) IBlogPostsRepository {
