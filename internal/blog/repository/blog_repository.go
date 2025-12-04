@@ -146,7 +146,7 @@ func (r *BlogRepository) GetBlogs() ([]model.BlogPost, error) {
 			updatedAt time.Time
 			tagName   sql.NullString
 		)
-		if err := rows.Scan(id, title, content, category, createdAt, updatedAt, tagName); err != nil {
+		if err := rows.Scan(&id, &title, &content, &category, &createdAt, &updatedAt, &tagName); err != nil {
 			return nil, err
 		}
 		post, exists := postsMap[id]
