@@ -82,28 +82,86 @@ func (r *BlogRepository) DeleteBlog(id int) error {
 
 // GetBlogById implements IBlogPostsRepository.
 func (r *BlogRepository) GetBlogById(id int) (model.BlogPost, error) {
-	var p model.BlogPost
-	row := r.db.QueryRow("SELECT * FROM posts WHERE id = ?", id)
-	if err := row.Scan(&p.Id, &p.Title, &p.Content, &p.Category, &p.CreatedAt, &p.UpdatedAt); err != nil {
-		if err == sql.ErrNoRows {
-			return model.BlogPost{}, fmt.Errorf("post %d not found", id)
-		}
-		return p, err
-	}
-	// get tags
-	rows, err := r.db.Query("SELECT t.tag_name FROM tags t JOIN post_tags pt ON t.id = pt.post_id WHERE pt.post_id = ?", id)
+	query := `
+		SELECT 
+			p.id, 
+			p.title, 
+			p.content, 
+			p.category, 
+			p.created_at, 
+			p.updated_at,
+			t.tag_name
+		FROM 
+			posts p
+		LEFT JOIN 
+			post_tags pt ON p.id = pt.post_id
+		LEFT JOIN 
+			tags t ON t.id = pt.tag_id
+		WHERE 
+			p.id = ?
+	`
+
+	rows, err := r.db.Query(query, id)
 	if err != nil {
-		return p, err
+		return model.BlogPost{}, err
 	}
 	defer rows.Close()
+
+	var p model.BlogPost
 	var tags []string
+	found := false
+
 	for rows.Next() {
-		var tag string
-		if err := rows.Scan(&tag); err != nil {
-			return p, err
+		var (
+			postId    int
+			title     string
+			content   string
+			category  string
+			createdAt string
+			updatedAt string
+			tagName   sql.NullString
+		)
+
+		if err := rows.Scan(&postId, &title, &content, &category, &createdAt, &updatedAt, &tagName); err != nil {
+			return model.BlogPost{}, err
 		}
-		tags = append(tags, tag)
+
+		// First row - populate the post
+		if !found {
+			createdTime, err := time.Parse("2006-01-02 15:04:05", createdAt)
+			if err != nil {
+				return model.BlogPost{}, err
+			}
+			updatedTime, err := time.Parse("2006-01-02 15:04:05", updatedAt)
+			if err != nil {
+				return model.BlogPost{}, err
+			}
+
+			p = model.BlogPost{
+				Id:        postId,
+				Title:     title,
+				Content:   content,
+				Category:  category,
+				CreatedAt: createdTime,
+				UpdatedAt: updatedTime,
+			}
+			found = true
+		}
+
+		// Add tag if it exists
+		if tagName.Valid {
+			tags = append(tags, tagName.String)
+		}
 	}
+
+	if err := rows.Err(); err != nil {
+		return model.BlogPost{}, err
+	}
+
+	if !found {
+		return model.BlogPost{}, fmt.Errorf("post %d not found", id)
+	}
+
 	p.Tags = tags
 	return p, nil
 }
@@ -142,8 +200,8 @@ func (r *BlogRepository) GetBlogs() ([]model.BlogPost, error) {
 			title     string
 			content   string
 			category  string
-			createdAt time.Time
-			updatedAt time.Time
+			createdAt string
+			updatedAt string
 			tagName   sql.NullString
 		)
 		if err := rows.Scan(&id, &title, &content, &category, &createdAt, &updatedAt, &tagName); err != nil {
@@ -151,13 +209,21 @@ func (r *BlogRepository) GetBlogs() ([]model.BlogPost, error) {
 		}
 		post, exists := postsMap[id]
 		if !exists {
+			createdTime, err := time.Parse("2006-01-02 15:04:05", createdAt)
+			if err != nil {
+				return nil, err
+			}
+			updatedTime, err := time.Parse("2006-01-02 15:04:05", updatedAt)
+			if err != nil {
+				return nil, err
+			}
 			post = &model.BlogPost{
 				Id:        id,
 				Title:     title,
 				Content:   content,
 				Category:  category,
-				CreatedAt: createdAt,
-				UpdatedAt: updatedAt,
+				CreatedAt: createdTime,
+				UpdatedAt: updatedTime,
 				Tags:      []string{},
 			}
 			postsMap[id] = post
