@@ -20,7 +20,8 @@ func NewBlogHandler(svc service.BlogPostService) *BlogHandler {
 }
 
 func (h *BlogHandler) GetAll(c *gin.Context) {
-	posts, err := h.svc.GetBlogs()
+	searchTerm := c.Query("term")
+	posts, err := h.svc.GetBlogs(searchTerm)
 	if err != nil {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),

@@ -21,8 +21,8 @@ func (s *BlogPostService) GetBlogById(id int) (model.BlogPost, error) {
 	return s.repo.GetBlogById(id)
 }
 
-func (s *BlogPostService) GetBlogs() ([]model.BlogPost, error) {
-	return s.repo.GetBlogs()
+func (s *BlogPostService) GetBlogs(q string) ([]model.BlogPost, error) {
+	return s.repo.GetBlogs(q)
 }
 
 func (s *BlogPostService) UpdateBlog(id int, req model.BlogPostRequest) (model.BlogPost, error) {

@@ -167,7 +167,7 @@ func (r *BlogRepository) GetBlogById(id int) (model.BlogPost, error) {
 }
 
 // GetBlogs implements IBlogPostsRepository.
-func (r *BlogRepository) GetBlogs() ([]model.BlogPost, error) {
+func (r *BlogRepository) GetBlogs(searchTerm string) ([]model.BlogPost, error) {
 	query := `
 		SELECT 
             p.id, 
@@ -183,9 +183,11 @@ func (r *BlogRepository) GetBlogs() ([]model.BlogPost, error) {
             post_tags pt ON p.id = pt.post_id
         LEFT JOIN 
             tags t ON t.id = pt.tag_id
+		WHERE p.title LIKE ? OR p.content LIKE ? OR p.category LIKE ?
         ORDER BY p.id	
 	`
-	rows, err := r.db.Query(query)
+	searchPattern := "%" + searchTerm + "%"
+	rows, err := r.db.Query(query, searchPattern, searchPattern, searchPattern)
 	if err != nil {
 		return nil, err
 	}
