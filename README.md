@@ -93,12 +93,11 @@ Create a post:
 `GET /posts`
 `GET /posts?term=tech`
 
-### **GET /posts/{id}`**
+### **GET /posts/{id}**
 
-### **PUT /posts/{id}`**
+### **PUT /posts/{id}**
 
-### **DELETE /posts/{id}`**
+### **DELETE /posts/{id}**
 
 ---
-
-If you want, I can also generate the **.env loader code** or **a `.env.example` file**.
+https://roadmap.sh/projects/blogging-platform-api
